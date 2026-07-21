@@ -63,3 +63,42 @@ export const habitTags = pgTable("habitTags", {
     .notNull(),
   tagId: uuid("tag_id").references(() => tags.id, { onDelete: "cascade" }),
 });
+
+// When you query the user, you now get a new field called habits which is all the habits that belong to the user
+export const userRelations = relations(users, ({ many }) => ({
+  habits: many(habits),
+}));
+
+// Habits are the many side, users are the one side
+export const habitsRelations = relations(habits, ({ many, one }) => ({
+  habitTags: many(habitTags),
+  user: one(users, {
+    // On the habits table, i want to add a new field called user and my habits.userId field should match, or reference the users.id
+    fields: [habits.userId], // The fields that show a link between the user and a habit
+    references: [users.id],
+  }),
+  entries: many(entries),
+}));
+
+// Entries are on the many side
+export const entriesRelations = relations(entries, ({ one }) => ({
+  habit: one(habits, {
+    fields: [entries.habitId],
+    references: [habits.id],
+  }),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  habitTags: many(habitTags),
+}));
+
+export const habitTagsRelations = relations(habitTags, ({ one }) => ({
+  habit: one(habits, {
+    fields: [habitTags.habitId],
+    references: [habits.id],
+  }),
+  tag: one(tags, {
+    fields: [habitTags.tagId],
+    references: [tags.id],
+  }),
+}));
