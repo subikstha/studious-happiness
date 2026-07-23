@@ -2,7 +2,8 @@ import type { Request, Response } from "express";
 import { db } from "../db/connection.ts";
 import { users, type NewUser } from "../db/schema.ts";
 import { generateToken } from "../utils/jwt.ts";
-import { hashPassword } from "../utils/passwords.ts";
+import { comparePasswords, hashPassword } from "../utils/passwords.ts";
+import { eq } from "drizzle-orm";
 
 export const register = async (
   req: Request<any, any, NewUser>,
@@ -41,5 +42,49 @@ export const register = async (
   } catch (e) {
     console.error("Registration error", e);
     res.status(500).json({ error: "Failed to create user" });
+  }
+};
+
+export const login = async (
+  req: Request<any, any, { email: string; password: string }>,
+  res: Response,
+) => {
+  try {
+    const { email, password } = req.body;
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const isValidPassword = comparePasswords(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = await generateToken({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    });
+
+    return res.status(201).json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        createdAt: user.createdAt,
+      },
+      token,
+    });
+  } catch (e) {
+    console.error("Login error", e);
+    res.status(500).json({ error: "Failed to login " });
   }
 };
