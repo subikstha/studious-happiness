@@ -4,8 +4,9 @@ import { type ZodSchema, ZodError } from "zod";
 export const validateBody = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const validatedData = schema.parse(req.body);
-      req.body = validatedData; // We reassign because in the schema we might be doing some coersions and we want to apply those
+      console.log("validating the req body", req.body);
+      schema.parse(req.body);
+      //req.body = validatedData; // We reassign because in the schema we might be doing some coersions and we want to apply those
       next();
     } catch (e) {
       if (e instanceof ZodError) {
