@@ -2,7 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { validateBody, validateParams } from "../middleware/validation.ts";
 import { authenticateToken } from "../middleware/auth.ts";
-import { createHabit, getUserHabits } from "../controllers/habitController.ts";
+import {
+  createHabit,
+  getUserHabits,
+  updateHabit,
+} from "../controllers/habitController.ts";
+import { insertHabitSchema } from "../db/schema.ts";
 
 const router = Router();
 
@@ -15,11 +20,17 @@ const createHabitSchema = z.object({
   tagIds: z.array(z.string()).optional(),
 });
 
+const updateHabitSchema = insertHabitSchema.partial().extend({
+  tagIds: z.array(z.string()).optional(),
+});
+
 const completeParamsSchema = z.object({
   id: z.string(),
 });
 
 router.get("/", getUserHabits);
+
+router.patch("/:id", validateBody(updateHabitSchema), updateHabit);
 
 router.get("/id", (req, res) => {
   res.json({ message: "got one habit" });

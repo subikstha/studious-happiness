@@ -77,3 +77,47 @@ export const getUserHabits = async (
     });
   }
 };
+
+export const updateHabit = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+    const { tagIds, ...updates } = req.body;
+
+    const result = await db.transaction(async (tx) => {
+      const [updatedHabit] = await tx
+        .update(habits)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(eq(habitTags.id, id), eq(habits.userId, req.user!.id)))
+        .returning();
+
+      if (!updateHabit) {
+        return res.status(401).end();
+        // throw new Error("Habit not found");
+      }
+
+      if (tagIds !== undefined) {
+        // Remove existing tags
+        await tx.delete(habitTags).where(eq(habitTags.habitId, id));
+
+        if (tagIds.length > 0) {
+          const habitTagValues = tagIds.map((tagId) => ({
+            habitId: id,
+            tagId,
+          }));
+          await tx.insert(habitTags).values(habitTagValues);
+        }
+      }
+
+      return updatedHabit;
+    });
+    res.json({
+      message: "Habit was updated",
+      habit: result,
+    });
+  } catch (e) {
+    console.error("Update habit error", e);
+    res.status(500).json({
+      error: "Failed to update habit",
+    });
+  }
+};
