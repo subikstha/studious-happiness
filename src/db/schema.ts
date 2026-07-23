@@ -105,6 +105,7 @@ export const habitTagsRelations = relations(habitTags, ({ one }) => ({
 }));
 
 export type User = typeof users.$inferSelect; // Make a TS type whose fields will be the same field as the users table
+export type NewUser = typeof users.$inferInsert;
 export type Habit = typeof habits.$inferSelect;
 export type Entry = typeof entries.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
